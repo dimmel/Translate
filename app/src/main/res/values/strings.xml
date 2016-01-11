@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Translate</string>
+    <string name="item1">Share</string>
+    <string name="item2">Progress</string>
+    <string name="ok">OK</string>
+    <string name="translate">Перевод</string>
+</resources>

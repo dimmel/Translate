@@ -1,0 +1,40 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" >
+
+    <item
+        android:id="@+id/send"
+        android:icon="@android:drawable/ic_menu_send"
+        android:orderInCategory="200"
+        android:title="@string/item2"
+        app:showAsAction="always">
+<!--        <menu>
+            <item
+                android:id="@+id/action_settings"
+                android:icon="@android:drawable/ic_menu_call"
+                android:orderInCategory="200"
+                android:title="@string/item1"
+                app:showAsAction="always">
+            </item>
+
+            <group
+                android:id="@+id/theme"
+                android:checkableBehavior="single" >
+                <item
+                    android:id="@+id/theme_dark"
+                    android:icon="@android:drawable/ic_menu_call"
+                    android:orderInCategory="220"
+                    android:title="@string/item1"
+                    app:showAsAction="always"/>
+            </group>
+        </menu>-->
+    </item>
+    <item
+        android:id="@+id/share"
+        android:icon="@android:drawable/ic_menu_share"
+        android:title="@string/item1"
+        android:actionProviderClass=
+            "android.widget.ShareActionProvider"
+        app:showAsAction="always|collapseActionView"/>
+</menu>
+
+    <!--app:actionViewClass="android.support.v7.widget.SearchView"-->
