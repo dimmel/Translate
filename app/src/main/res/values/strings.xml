@@ -1,7 +1,11 @@
 <resources>
-    <string name="app_name">Translate</string>
+    <string name="app_name">Переводчик блокнот</string>
     <string name="item1">Share</string>
-    <string name="item2">Progress</string>
+    <string name="action">Action</string>
     <string name="ok">OK</string>
     <string name="translate">Перевод</string>
+    <string name="send">Отправить</string>
+    <string name="del">Удалить</string>
+    <string name="en">En</string>
+    <string name="ru">Ru</string>
 </resources>

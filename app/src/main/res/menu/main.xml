@@ -2,20 +2,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto" >
 
     <item
-        android:id="@+id/send"
-        android:icon="@android:drawable/ic_menu_send"
+        android:id="@+id/action"
+        android:icon="@android:drawable/ic_menu_set_as"
         android:orderInCategory="200"
-        android:title="@string/item2"
+        android:title="@string/action"
         app:showAsAction="always">
     </item>
 
-    <item
+<!--    <item
         android:id="@+id/share"
         android:icon="@android:drawable/ic_menu_share"
         android:title="@string/item1"
         android:actionProviderClass=
             "android.widget.ShareActionProvider"
-        app:showAsAction="always|collapseActionView"/>
+        app:showAsAction="always|collapseActionView"/>-->
 </menu>
 
     <!--app:actionViewClass="android.support.v7.widget.SearchView"-->

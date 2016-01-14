@@ -132,9 +132,11 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
             if (listCurs != null && !listCurs.isClosed()) {
                 listCurs.close();
             }
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,   R.layout.support_simple_spinner_dropdown_item, list); //прикручиваю адаптер
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,   R.layout.support_simple_spinner_dropdown_item, list);
+            //прикручиваю адаптер
 
             lv.setAdapter(adapter);
+            lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
             actv.setAdapter(adapter);
         }
         catch(Throwable t) {
@@ -164,20 +166,17 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
-            case R.id.share:
+/*            case R.id.share:
                 final Intent intent = new Intent(Intent.ACTION_SEND);
                 intent.setType("text/plain");
-                /*intent.putExtra(Intent.EXTRA_SUBJECT, "_SUBJECT_");*/
+                *//*intent.putExtra(Intent.EXTRA_SUBJECT, "_SUBJECT_");*//*
                 intent.putExtra(Intent.EXTRA_TEXT, "ЭТО НЕ ТО! НАДО БД ОТПРАВЛЯТЬ!");
                 startActivity(Intent.createChooser(intent, getString(R.string.app_name)));
-                break;
-            case R.id.send:
-                if(showUp){
-                    setProgressBarIndeterminateVisibility(true);
-                }else {
-                    setProgressBarIndeterminateVisibility(false);
-                }
-                showUp=!showUp;
+                break;*/
+            case R.id.action:
+                Intent intents = new Intent(this,TwoActivity.class);
+                startActivity(intents);
+                finish();
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -289,11 +288,11 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
 
     //Ищем слово в базе данных в том случае, если нажали на кнопку SEARCH вместо клика по слову, таким образом избегаем двоного сохранения в базе
     private void searchWordInDB(int arg) {
+        dbHelper = new DBHelper(this);
+        db = dbHelper.getWritableDatabase();
+        Cursor cursSearch = db.query("translateTable", null, null, null, null, null, null);
         switch (arg) {
             case 1:
-                dbHelper = new DBHelper(this);
-                db = dbHelper.getWritableDatabase();
-                Cursor cursSearch = db.query("translateTable", null, null, null, null, null, null);
                 cursSearch.moveToFirst();
                 int checkWord = 0;
                 if (cursSearch.moveToFirst()) {
@@ -324,7 +323,6 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
                             testLanguage();
                             searchWordInDB(1);
                             actv.setText("");
-
                         }
                     } while (cursSearch.moveToNext());
                 }
@@ -342,28 +340,26 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
                         getTranslate();
                     }
                 }
-                dbHelper.close();
-                cursSearch.close();
                 break;
             case 2:
-                dbHelper = new DBHelper(this);
-                db=dbHelper.getWritableDatabase();
-                Cursor cursSearch2 = db.query("translateTable", null, null, null, null, null, null);
-                cursSearch2.moveToFirst();
+/*                dbHelper = new DBHelper(this);
+                db=dbHelper.getWritableDatabase();*/
+                /*Cursor cursSearch2 = db.query("translateTable", null, null, null, null, null, null);*/
+                cursSearch.moveToFirst();
                 do {
                     if(local=="en"){
-                        String wordDB = cursSearch2.getString(1);
+                        String wordDB = cursSearch.getString(1);
                         if(wordDB.equals(word)){
-                            wordTrans = cursSearch2.getString(2);
+                            wordTrans = cursSearch.getString(2);
                             showDialog(DIALOG_EXIT);
                             actv.setText("");
                             hideKeyboard();
                         }
                     }
                     else if(local=="ru"){
-                        String wordDB = cursSearch2.getString(2);
+                        String wordDB = cursSearch.getString(2);
                         if(wordDB.equals(word)){
-                            wordTrans = cursSearch2.getString(1);
+                            wordTrans = cursSearch.getString(1);
                             showDialog(DIALOG_EXIT);}
                         actv.setText("");
                         hideKeyboard();
@@ -372,12 +368,13 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
                         vvodimiyText=word;
                         testLanguage();
                         searchWordInDB(2);}
-                }while (cursSearch2.moveToNext());
-                dbHelper.close();
-                cursSearch2.close();
-
+                }while (cursSearch.moveToNext());
+/*                dbHelper.close();
+                cursSearch2.close();*/
                 break;
         }
+        dbHelper.close();
+        cursSearch.close();
     }
 
     protected Dialog onCreateDialog(int id) {
@@ -391,6 +388,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
             adb.setIcon(android.R.drawable.ic_dialog_info);
             // кнопка положительного ответа
             adb.setPositiveButton(R.string.ok, myClickListener);
+            adb.setNegativeButton("Отправить",myClickListener);
             // создаем диалог
             return adb.create();
         }
@@ -402,10 +400,15 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
             switch (which) {
                 // положительная кнопка
                 case Dialog.BUTTON_POSITIVE:
-
                     removeDialog(DIALOG_EXIT);
-                    /*finish();*/
-
+                    break;
+                case Dialog.BUTTON_NEGATIVE:
+                    final Intent intent = new Intent(Intent.ACTION_SEND);
+                    intent.setType("text/plain");
+                /*intent.putExtra(Intent.EXTRA_SUBJECT, "_SUBJECT_");*/
+                    intent.putExtra(Intent.EXTRA_TEXT, "Слово: "+word+"\nПеревод: "+wordTrans+"\nОтправлено из приложения \"Переводчик-Блокнот\" https://play.google.com/store/apps/developer?id=Dmitry+Melnichenko");
+                    startActivity(Intent.createChooser(intent, getString(R.string.app_name)));
+                    removeDialog(DIALOG_EXIT);
                     break;
             }
         }
@@ -425,6 +428,12 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
                     + "en text,"
                     + "ru text" + ");";
             db.execSQL(base);
+            String base2, mytable2 = "sendTable";
+            base2 = "create table " + mytable2 + "("
+                    + "id integer primary key autoincrement,"
+                    + "en text,"
+                    + "ru text" + ");";
+            db.execSQL(base2);
 
         }
 
