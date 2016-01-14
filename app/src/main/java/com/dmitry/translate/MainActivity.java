@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
@@ -58,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
     String ruWord, enWord;
     ContentValues cv = new ContentValues();
     String LANG = "en-ru";
+    boolean showUp=true;
 
     private final String URL = "https://translate.yandex.net";
     private final String KEY = "trnsl.1.1.20160108T135852Z.7b673d1999b55f8b.1a96a0d0ea5feda9fa8359a18664b34483707ef9";
@@ -72,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);//для прогресс бара
         setContentView(R.layout.activity_main);
         actv = (AutoCompleteTextView) findViewById(R.id.actv);
         lv = (ListView)findViewById(R.id.listView);
@@ -96,20 +99,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
     void readDB() {
         String SORT=null;
         dbHelper = new DBHelper(this);
-        db=dbHelper.getWritableDatabase();/*
-        Log.d(TAG, "Чтение файла: " + fileName);
-        Cursor curs = db.query("translateTable", null, null, null, null, null, SORT);
-        if (curs.moveToFirst()){
-            int idColIndex=curs.getColumnIndex("id");
-            int enColindex = curs.getColumnIndex("en");
-            int ruColIndex = curs.getColumnIndex("ru");
-            do{
-                Log.d(TAG,"ID = " + curs.getInt(idColIndex) +
-                                ", en = " + curs.getString(enColindex) +
-                                ", ru = " + curs.getString(ruColIndex));
-            }while(curs.moveToNext());
-        } else Log.d(TAG, "0 rows");
-        curs.close();*/
+        db=dbHelper.getWritableDatabase();
         try {
             //забиваю данные из БД в лист
             List<String> list= new ArrayList<String>();
@@ -134,9 +124,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
                 //при старте вывести всю базу (и русс и англ слова)
                 else {
                     do {
-                        list.add(listCurs.getString(1));
-                        list.add(listCurs.getString(2));
-
+                        list.add(listCurs.getString(2)+" - "+listCurs.getString(1));
                     } while (listCurs.moveToNext());
                 }
 
@@ -161,7 +149,6 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
         db=dbHelper.getWritableDatabase();
         cv.put("en", enWord);
         cv.put("ru", ruWord);
-        //вставить сверку значений с уже существующим в БД
         db.insert("translateTable", null, cv);
         dbHelper.close();
         readDB();
@@ -181,10 +168,17 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
                 final Intent intent = new Intent(Intent.ACTION_SEND);
                 intent.setType("text/plain");
                 /*intent.putExtra(Intent.EXTRA_SUBJECT, "_SUBJECT_");*/
-                intent.putExtra(Intent.EXTRA_TEXT, "ЭЬТО НЕ ТО! НАДО БД ОТПРАВЛЯТЬ!");
+                intent.putExtra(Intent.EXTRA_TEXT, "ЭТО НЕ ТО! НАДО БД ОТПРАВЛЯТЬ!");
                 startActivity(Intent.createChooser(intent, getString(R.string.app_name)));
                 break;
-            case R.id.send:break;
+            case R.id.send:
+                if(showUp){
+                    setProgressBarIndeterminateVisibility(true);
+                }else {
+                    setProgressBarIndeterminateVisibility(false);
+                }
+                showUp=!showUp;
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -192,7 +186,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
     public void search(View v) {
         //Toast.makeText(this, "SEARCH", Toast.LENGTH_SHORT).show();
         word=vvodimiyText;
-        try {searchWordInDB();}catch (Exception e){e.printStackTrace();Log.d(TAG, "ОШИБКА ЧТЕНИЯ БАЗЫ при клике!!!");}
+        try {searchWordInDB(1);}catch (Exception e){e.printStackTrace();Log.d(TAG, "ОШИБКА ЧТЕНИЯ БАЗЫ при клике!!!");}
         //try{ searchWordInDB();}catch (Exception e){e.printStackTrace(); getTranslate();}
 
 
@@ -229,7 +223,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
             addToDB();
 
 
-        } catch (Exception e) {e.printStackTrace(); Log.d(TAG,"ОШИБКА скорей всего слово с проблеом");}
+        } catch (Exception e) {e.printStackTrace(); Log.d(TAG,"ОШИБКА скорей всего слово с пробелом");}
     }
 
     @Override
@@ -283,40 +277,9 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
         word = ((TextView) view).getText().toString();
         Log.d(TAG, "word=" + word);
         //выбираем слово из базе данных по клику(локаль еще не определена, первый выбор из полного списка)
-        searchWordInRealDB();
+        searchWordInDB(2);
     }
 
-    private void searchWordInRealDB() {
-        dbHelper = new DBHelper(this);
-        db=dbHelper.getWritableDatabase();
-        Cursor cursSearch = db.query("translateTable", null, null, null, null, null, null);
-        cursSearch.moveToFirst();
-        do {
-            if(local=="en"){
-                String wordDB = cursSearch.getString(1);
-                if(wordDB.equals(word)){
-                    wordTrans = cursSearch.getString(2);
-                    showDialog(DIALOG_EXIT);
-                    actv.setText("");
-                    hideKeyboard();
-                   }
-            }
-            else if(local=="ru"){
-                String wordDB = cursSearch.getString(2);
-                if(wordDB.equals(word)){
-                    wordTrans = cursSearch.getString(1);
-                    showDialog(DIALOG_EXIT);}
-                actv.setText("");
-                hideKeyboard();
-            }
-            else{Log.d(TAG, "что-то пошло не так in REAL db!!!");
-                vvodimiyText=word;
-                testLanguage();
-                searchWordInRealDB();}
-        }while (cursSearch.moveToNext());
-        dbHelper.close();
-        cursSearch.close();
-    }
 
     //метод прячет клавиатуру
     private void hideKeyboard() {
@@ -325,60 +288,96 @@ public class MainActivity extends AppCompatActivity implements TextWatcher, Adap
     }
 
     //Ищем слово в базе данных в том случае, если нажали на кнопку SEARCH вместо клика по слову, таким образом избегаем двоного сохранения в базе
-    private void searchWordInDB() {
-        dbHelper = new DBHelper(this);
-        db=dbHelper.getWritableDatabase();
-        Cursor cursSearch = db.query("translateTable", null, null, null, null, null, null);
-        cursSearch.moveToFirst();
-        int checkWord=0;
-        if (cursSearch.moveToFirst()) {
-            do {
-                if (local == "en") {
-                    String wordDB = cursSearch.getString(1);
+    private void searchWordInDB(int arg) {
+        switch (arg) {
+            case 1:
+                dbHelper = new DBHelper(this);
+                db = dbHelper.getWritableDatabase();
+                Cursor cursSearch = db.query("translateTable", null, null, null, null, null, null);
+                cursSearch.moveToFirst();
+                int checkWord = 0;
+                if (cursSearch.moveToFirst()) {
+                    do {
+                        if (local == "en") {
+                            String wordDB = cursSearch.getString(1);
 
-                    if (wordDB.equals(word)) {
-                        wordTrans = cursSearch.getString(2);
-                        showDialog(DIALOG_EXIT);
-                        Log.d(TAG, "ENGLISH");
-                        checkWord = 1;
-                    }
-                } else if (local == "ru") {
-                    String wordDB = cursSearch.getString(2);
-                    Log.d(TAG, "word=" + word + " wordDB=" + wordDB);
+                            if (wordDB.equals(word)) {
+                                wordTrans = cursSearch.getString(2);
+                                showDialog(DIALOG_EXIT);
+                                Log.d(TAG, "ENGLISH");
+                                checkWord = 1;
+                            }
+                        } else if (local == "ru") {
+                            String wordDB = cursSearch.getString(2);
+                            Log.d(TAG, "word=" + word + " wordDB=" + wordDB);
 
-                    if (wordDB.equals(word)) {
-                        wordTrans = cursSearch.getString(1);
-                        showDialog(DIALOG_EXIT);
-                        Log.d(TAG, "RUSSIAN");
-                        checkWord = 1;
-                    }
-                } else {
-                    Log.d(TAG, "что-то пошло не так");
-                    //кликнув на русскае слово - остались все русские, на англ - англ
-                    vvodimiyText = word;
-                    testLanguage();
-                    searchWordInDB();
-                    actv.setText("");
+                            if (wordDB.equals(word)) {
+                                wordTrans = cursSearch.getString(1);
+                                showDialog(DIALOG_EXIT);
+                                Log.d(TAG, "RUSSIAN");
+                                checkWord = 1;
+                            }
+                        } else {
+                            Log.d(TAG, "что-то пошло не так");
+                            //кликнув на русскае слово - остались все русские, на англ - англ
+                            vvodimiyText = word;
+                            testLanguage();
+                            searchWordInDB(1);
+                            actv.setText("");
 
+                        }
+                    } while (cursSearch.moveToNext());
                 }
-            } while (cursSearch.moveToNext());
+                if (checkWord == 0) {
+                    if (local == "ru") {
+                        Log.d(TAG, "else Russian");
+                        //ищем в инете русс перевод
+                        LANG = "ru-en";
+                        getTranslate();
+                    }
+                    if (local == "en") {
+                        //ищем в инете англ перевод
+                        Log.d(TAG, "else English");
+                        LANG = "en-ru";
+                        getTranslate();
+                    }
+                }
+                dbHelper.close();
+                cursSearch.close();
+                break;
+            case 2:
+                dbHelper = new DBHelper(this);
+                db=dbHelper.getWritableDatabase();
+                Cursor cursSearch2 = db.query("translateTable", null, null, null, null, null, null);
+                cursSearch2.moveToFirst();
+                do {
+                    if(local=="en"){
+                        String wordDB = cursSearch2.getString(1);
+                        if(wordDB.equals(word)){
+                            wordTrans = cursSearch2.getString(2);
+                            showDialog(DIALOG_EXIT);
+                            actv.setText("");
+                            hideKeyboard();
+                        }
+                    }
+                    else if(local=="ru"){
+                        String wordDB = cursSearch2.getString(2);
+                        if(wordDB.equals(word)){
+                            wordTrans = cursSearch2.getString(1);
+                            showDialog(DIALOG_EXIT);}
+                        actv.setText("");
+                        hideKeyboard();
+                    }
+                    else{Log.d(TAG, "что-то пошло не так in REAL db!!!");
+                        vvodimiyText=word;
+                        testLanguage();
+                        searchWordInDB(2);}
+                }while (cursSearch2.moveToNext());
+                dbHelper.close();
+                cursSearch2.close();
+
+                break;
         }
-        if (checkWord==0){
-            if(local=="ru"){
-                Log.d(TAG, "else Russian");
-                //ищем в инете русс перевод
-                LANG = "ru-en";
-                getTranslate();
-            }
-            if(local=="en"){
-                //ищем в инете англ перевод
-                Log.d(TAG, "else English");
-                LANG = "en-ru";
-                getTranslate();
-            }
-        }
-        dbHelper.close();
-        cursSearch.close();
     }
 
     protected Dialog onCreateDialog(int id) {
